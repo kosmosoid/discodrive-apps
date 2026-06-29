@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ok">OK</string>
+    <string name="cancel">Отмена</string>
+    <string name="back">Назад</string>
+    <string name="password">Пароль</string>
+    <string name="name">Имя</string>
+    <string name="on">Вкл.</string>
+    <string name="off">Выкл.</string>
+    <string name="vault_root">Хранилище</string>
+
+    <string name="perm_title">Требуется доступ к хранилищу</string>
+    <string name="perm_body">Предоставьте «Доступ ко всем файлам», чтобы загруженные файлы были доступны другим приложениям (напр. KeePass).</string>
+    <string name="perm_grant">Предоставить доступ</string>
+
+    <string name="setup_server_url">URL сервера</string>
+    <string name="setup_self_signed">Самоподписанный сертификат</string>
+    <string name="setup_self_signed_warn">Отключает проверку TLS-сертификата — токен и файлы могут перехватить. Только в доверенной сети.</string>
+    <string name="setup_code">Код: %1$s</string>
+    <string name="setup_confirm_code">Подтвердите этот код в браузере для сопряжения.</string>
+    <string name="setup_pair">Сопрячь устройство</string>
+
+    <string name="menu_new_folder">Новая папка</string>
+    <string name="menu_upload">Загрузить</string>
+    <string name="menu_settings">Настройки</string>
+    <string name="action_open">Открыть</string>
+    <string name="action_download">Скачать</string>
+    <string name="action_pin">Закрепить</string>
+    <string name="action_unpin">Открепить</string>
+    <string name="action_remove_local">Удалить локальную копию</string>
+    <string name="action_rename">Переименовать</string>
+    <string name="action_move">Переместить</string>
+    <string name="action_delete">Удалить</string>
+
+    <string name="dialog_new_folder_title">Новая папка</string>
+    <string name="dialog_rename_title">Переименовать</string>
+    <string name="dialog_new_name">Новое имя</string>
+
+    <string name="move_to">Переместить в: %1$s</string>
+    <string name="move_up">⬑ Вверх</string>
+    <string name="move_here">Переместить сюда</string>
+
+    <string name="status_stale">устарело (нажмите «Скачать» для обновления)</string>
+    <string name="status_pinned">закреплено</string>
+    <string name="status_cached">в кэше</string>
+
+    <string name="unlock_vault">Разблокировать хранилище</string>
+    <string name="unlock">Разблокировать</string>
+    <string name="menu_lock_vault">Заблокировать хранилище</string>
+    <string name="vault_unlocking">Разблокировка хранилища…</string>
+    <string name="vault_open_failed">Не удалось открыть хранилище</string>
+
+    <string name="settings_title">Настройки</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_language_system">Системный</string>
+    <string name="settings_server">Сервер</string>
+    <string name="settings_unpair">Разорвать пару</string>
+    <string name="settings_unpair_confirm_title">Разорвать пару с устройством?</string>
+    <string name="settings_unpair_confirm_body">Это удалит сопряжение и локальный индекс с этого устройства.</string>
+    <string name="settings_version">Версия</string>
+
+    <string name="cd_back">Назад</string>
+    <string name="cd_refresh">Обновить</string>
+    <string name="cd_menu">Меню</string>
+    <string name="cd_actions">Действия</string>
+    <string name="cd_unlock">Разблокировать хранилище</string>
+    <string name="cd_lock">Заблокировать хранилище</string>
+</resources>

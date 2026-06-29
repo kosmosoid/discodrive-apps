@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ok">OK</string>
+    <string name="cancel">Annuler</string>
+    <string name="back">Retour</string>
+    <string name="password">Mot de passe</string>
+    <string name="name">Nom</string>
+    <string name="on">Activé</string>
+    <string name="off">Désactivé</string>
+    <string name="vault_root">Coffre</string>
+
+    <string name="perm_title">Accès au stockage requis</string>
+    <string name="perm_body">Accordez « Accès à tous les fichiers » pour que les fichiers téléchargés soient accessibles aux autres applis (p. ex. KeePass).</string>
+    <string name="perm_grant">Accorder l\'accès</string>
+
+    <string name="setup_server_url">URL du serveur</string>
+    <string name="setup_self_signed">Certificat auto-signé</string>
+    <string name="setup_self_signed_warn">Désactive la vérification du certificat TLS — votre jeton et vos fichiers peuvent être interceptés. À utiliser uniquement sur un réseau de confiance.</string>
+    <string name="setup_code">Code : %1$s</string>
+    <string name="setup_confirm_code">Confirmez ce code dans le navigateur pour appairer.</string>
+    <string name="setup_pair">Appairer l\'appareil</string>
+
+    <string name="menu_new_folder">Nouveau dossier</string>
+    <string name="menu_upload">Téléverser</string>
+    <string name="menu_settings">Paramètres</string>
+    <string name="action_open">Ouvrir</string>
+    <string name="action_download">Télécharger</string>
+    <string name="action_pin">Épingler</string>
+    <string name="action_unpin">Désépingler</string>
+    <string name="action_remove_local">Supprimer la copie locale</string>
+    <string name="action_rename">Renommer</string>
+    <string name="action_move">Déplacer</string>
+    <string name="action_delete">Supprimer</string>
+
+    <string name="dialog_new_folder_title">Nouveau dossier</string>
+    <string name="dialog_rename_title">Renommer</string>
+    <string name="dialog_new_name">Nouveau nom</string>
+
+    <string name="move_to">Déplacer vers : %1$s</string>
+    <string name="move_up">⬑ Monter</string>
+    <string name="move_here">Déplacer ici</string>
+
+    <string name="status_stale">obsolète (touchez « Télécharger » pour actualiser)</string>
+    <string name="status_pinned">épinglé</string>
+    <string name="status_cached">en cache</string>
+
+    <string name="unlock_vault">Déverrouiller le coffre</string>
+    <string name="unlock">Déverrouiller</string>
+    <string name="menu_lock_vault">Verrouiller le coffre</string>
+    <string name="vault_unlocking">Déverrouillage du coffre…</string>
+    <string name="vault_open_failed">Impossible d\'ouvrir le coffre</string>
+
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_language">Langue</string>
+    <string name="settings_language_system">Système</string>
+    <string name="settings_server">Serveur</string>
+    <string name="settings_unpair">Dissocier</string>
+    <string name="settings_unpair_confirm_title">Dissocier l\'appareil ?</string>
+    <string name="settings_unpair_confirm_body">Cela supprime l\'appairage et l\'index local de cet appareil.</string>
+    <string name="settings_version">Version</string>
+
+    <string name="cd_back">Retour</string>
+    <string name="cd_refresh">Actualiser</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_actions">Actions</string>
+    <string name="cd_unlock">Déverrouiller le coffre</string>
+    <string name="cd_lock">Verrouiller le coffre</string>
+</resources>

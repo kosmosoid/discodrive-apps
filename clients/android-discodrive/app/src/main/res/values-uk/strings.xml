@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ok">OK</string>
+    <string name="cancel">Скасувати</string>
+    <string name="back">Назад</string>
+    <string name="password">Пароль</string>
+    <string name="name">Назва</string>
+    <string name="on">Увімк.</string>
+    <string name="off">Вимк.</string>
+    <string name="vault_root">Сховище</string>
+
+    <string name="perm_title">Потрібен доступ до сховища</string>
+    <string name="perm_body">Надайте «Доступ до всіх файлів», щоб завантажені файли були доступні іншим застосункам (напр. KeePass).</string>
+    <string name="perm_grant">Надати доступ</string>
+
+    <string name="setup_server_url">URL сервера</string>
+    <string name="setup_self_signed">Самопідписаний сертифікат</string>
+    <string name="setup_self_signed_warn">Вимикає перевірку TLS-сертифіката — токен і файли можуть перехопити. Лише в довіреній мережі.</string>
+    <string name="setup_code">Код: %1$s</string>
+    <string name="setup_confirm_code">Підтвердьте цей код у браузері, щоб виконати парування.</string>
+    <string name="setup_pair">Парувати пристрій</string>
+
+    <string name="menu_new_folder">Нова папка</string>
+    <string name="menu_upload">Вивантажити</string>
+    <string name="menu_settings">Налаштування</string>
+    <string name="action_open">Відкрити</string>
+    <string name="action_download">Завантажити</string>
+    <string name="action_pin">Закріпити</string>
+    <string name="action_unpin">Відкріпити</string>
+    <string name="action_remove_local">Видалити локальну копію</string>
+    <string name="action_rename">Перейменувати</string>
+    <string name="action_move">Перемістити</string>
+    <string name="action_delete">Видалити</string>
+
+    <string name="dialog_new_folder_title">Нова папка</string>
+    <string name="dialog_rename_title">Перейменувати</string>
+    <string name="dialog_new_name">Нова назва</string>
+
+    <string name="move_to">Перемістити до: %1$s</string>
+    <string name="move_up">⬑ Угору</string>
+    <string name="move_here">Перемістити сюди</string>
+
+    <string name="status_stale">застаріло (торкніться «Завантажити», щоб оновити)</string>
+    <string name="status_pinned">закріплено</string>
+    <string name="status_cached">кешовано</string>
+
+    <string name="unlock_vault">Розблокувати сховище</string>
+    <string name="unlock">Розблокувати</string>
+    <string name="menu_lock_vault">Заблокувати сховище</string>
+    <string name="vault_unlocking">Розблокування сховища…</string>
+    <string name="vault_open_failed">Не вдалося відкрити сховище</string>
+
+    <string name="settings_title">Налаштування</string>
+    <string name="settings_language">Мова</string>
+    <string name="settings_language_system">Системна</string>
+    <string name="settings_server">Сервер</string>
+    <string name="settings_unpair">Розпарувати</string>
+    <string name="settings_unpair_confirm_title">Розпарувати пристрій?</string>
+    <string name="settings_unpair_confirm_body">Це видалить парування та локальний індекс із цього пристрою.</string>
+    <string name="settings_version">Версія</string>
+
+    <string name="cd_back">Назад</string>
+    <string name="cd_refresh">Оновити</string>
+    <string name="cd_menu">Меню</string>
+    <string name="cd_actions">Дії</string>
+    <string name="cd_unlock">Розблокувати сховище</string>
+    <string name="cd_lock">Заблокувати сховище</string>
+</resources>

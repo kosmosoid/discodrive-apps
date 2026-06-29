@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ok">OK</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="back">Zurück</string>
+    <string name="password">Passwort</string>
+    <string name="name">Name</string>
+    <string name="on">An</string>
+    <string name="off">Aus</string>
+    <string name="vault_root">Tresor</string>
+
+    <string name="perm_title">Speicherzugriff erforderlich</string>
+    <string name="perm_body">Erteile „Zugriff auf alle Dateien“, damit heruntergeladene Dateien für andere Apps (z. B. KeePass) erreichbar sind.</string>
+    <string name="perm_grant">Zugriff erteilen</string>
+
+    <string name="setup_server_url">Server-URL</string>
+    <string name="setup_self_signed">Selbstsigniertes Zertifikat</string>
+    <string name="setup_self_signed_warn">Deaktiviert die TLS-Zertifikatsprüfung – Token und Dateien können abgefangen werden. Nur in einem vertrauenswürdigen Netzwerk verwenden.</string>
+    <string name="setup_code">Code: %1$s</string>
+    <string name="setup_confirm_code">Bestätige diesen Code im Browser, um zu koppeln.</string>
+    <string name="setup_pair">Gerät koppeln</string>
+
+    <string name="menu_new_folder">Neuer Ordner</string>
+    <string name="menu_upload">Hochladen</string>
+    <string name="menu_settings">Einstellungen</string>
+    <string name="action_open">Öffnen</string>
+    <string name="action_download">Herunterladen</string>
+    <string name="action_pin">Anheften</string>
+    <string name="action_unpin">Lösen</string>
+    <string name="action_remove_local">Lokale Kopie entfernen</string>
+    <string name="action_rename">Umbenennen</string>
+    <string name="action_move">Verschieben</string>
+    <string name="action_delete">Löschen</string>
+
+    <string name="dialog_new_folder_title">Neuer Ordner</string>
+    <string name="dialog_rename_title">Umbenennen</string>
+    <string name="dialog_new_name">Neuer Name</string>
+
+    <string name="move_to">Verschieben nach: %1$s</string>
+    <string name="move_up">⬑ Nach oben</string>
+    <string name="move_here">Hierher verschieben</string>
+
+    <string name="status_stale">veraltet (zum Aktualisieren „Herunterladen“ tippen)</string>
+    <string name="status_pinned">angeheftet</string>
+    <string name="status_cached">zwischengespeichert</string>
+
+    <string name="unlock_vault">Tresor entsperren</string>
+    <string name="unlock">Entsperren</string>
+    <string name="menu_lock_vault">Tresor sperren</string>
+    <string name="vault_unlocking">Tresor wird entsperrt …</string>
+    <string name="vault_open_failed">Tresor konnte nicht geöffnet werden</string>
+
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_language">Sprache</string>
+    <string name="settings_language_system">Systemstandard</string>
+    <string name="settings_server">Server</string>
+    <string name="settings_unpair">Entkoppeln</string>
+    <string name="settings_unpair_confirm_title">Gerät entkoppeln?</string>
+    <string name="settings_unpair_confirm_body">Dies entfernt die Kopplung und den lokalen Index von diesem Gerät.</string>
+    <string name="settings_version">Version</string>
+
+    <string name="cd_back">Zurück</string>
+    <string name="cd_refresh">Aktualisieren</string>
+    <string name="cd_menu">Menü</string>
+    <string name="cd_actions">Aktionen</string>
+    <string name="cd_unlock">Tresor entsperren</string>
+    <string name="cd_lock">Tresor sperren</string>
+</resources>

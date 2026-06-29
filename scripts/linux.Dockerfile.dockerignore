@@ -1,0 +1,9 @@
+.git
+dist
+**/build/bin
+**/node_modules
+**/fyne-cross
+daemon/mobile/build
+clients/*/app/build
+clients/*/build
+**/*.app

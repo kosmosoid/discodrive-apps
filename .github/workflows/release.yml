@@ -1,0 +1,165 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+env:
+  GO_VERSION: "1.25"
+  WAILS_VERSION: "v2.12.0"
+
+jobs:
+  daemon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Build daemon for all targets
+        run: |
+          make daemon OS=darwin  ARCH=amd64
+          make daemon OS=darwin  ARCH=arm64
+          make daemon OS=linux   ARCH=amd64
+          make daemon OS=linux   ARCH=arm64
+          make daemon OS=windows ARCH=amd64
+      - name: Package
+        run: |
+          cd dist
+          for d in */; do tar czf "discodrive-daemon-${d%/}.tar.gz" -C "$d" .; done
+          ls -la
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daemon
+          path: dist/*.tar.gz
+
+  desktop-mac-win:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install desktop toolchain + NSIS
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@${WAILS_VERSION}
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          brew install makensis
+      - name: Resolve version + stamp wails.json
+        id: ver
+        run: |
+          V=""
+          case "$GITHUB_REF" in refs/tags/v*) V="${GITHUB_REF_NAME#v}";; esac
+          scripts/set-version.sh "$V"
+          [ -n "$V" ] || V="$(jq -r '.info.productVersion' daemon/cmd/discodrive-wails/wails.json)"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+      - name: Build macOS .dmg (universal)
+        run: make dmg-desktop-macos VERSION="${{ steps.ver.outputs.version }}"
+      - name: Build Windows .exe + installers (cross-built)
+        run: make desktop-windows
+      - name: Collect artifacts (unsigned)
+        env:
+          VER: ${{ steps.ver.outputs.version }}
+        run: |
+          mkdir -p out
+          for f in dist/*.dmg; do
+            cp "$f" "out/$(basename "$f" .dmg)-unsigned.dmg"
+          done
+          for a in amd64 arm64; do
+            cp "dist/windows/DiscoDrive-$a.exe"                 "out/DiscoDrive-$VER-windows-$a-unsigned.exe"
+            cp "dist/windows/discodrive-wails-$a-installer.exe" "out/DiscoDrive-$VER-windows-$a-installer-unsigned.exe"
+          done
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-mac-win
+          path: out/*
+
+  desktop-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve version + stamp wails.json
+        id: ver
+        run: |
+          V=""
+          case "$GITHUB_REF" in refs/tags/v*) V="${GITHUB_REF_NAME#v}";; esac
+          scripts/set-version.sh "$V"
+          [ -n "$V" ] || V="$(jq -r '.info.productVersion' daemon/cmd/discodrive-wails/wails.json)"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+      - name: Build Linux binary (Docker/Debian)
+        run: make desktop-linux
+      - name: Collect artifact
+        env:
+          VER: ${{ steps.ver.outputs.version }}
+        run: |
+          mkdir -p out
+          cp dist/linux/DiscoDrive "out/DiscoDrive-$VER-linux-amd64"
+          chmod +x "out/DiscoDrive-$VER-linux-amd64"
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux
+          path: out/*
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+      - name: Install NDK + gomobile
+        run: |
+          sdkmanager "ndk;26.3.11579264" "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/26.3.11579264" >> "$GITHUB_ENV"
+          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20260611195102-4dd8f1dbf5d2
+          go install golang.org/x/mobile/cmd/gobind@v0.0.0-20260611195102-4dd8f1dbf5d2
+          "$(go env GOPATH)/bin/gomobile" init
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Build Android bindings + apps (debug)
+        run: |
+          make bind-android
+          (cd clients/android-discodrive && gradle assembleDebug) || echo "android-discodrive build needs gradle setup"
+          (cd clients/android-fastsync   && gradle assembleDebug) || echo "android-fastsync build needs gradle setup"
+      - name: Collect apks
+        run: |
+          mkdir -p out
+          find clients -name '*.apk' -path '*/outputs/*' -exec cp {} out/ \; || true
+          ls -la out || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: out/*.apk
+          if-no-files-found: warn
+
+  release:
+    needs: [daemon, desktop-mac-win, desktop-linux, android]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Flatten
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec cp -n {} release/ \;
+          ls -la release
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: release/*
+          fail_on_unmatched_files: false
+          generate_release_notes: true

@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme palette reused from the server web UI (dark). */
+:root {
+  /* Tell the engine to render native controls (select popups, scrollbars) dark —
+     WebKitGTK on Linux otherwise paints them light regardless of CSS. */
+  color-scheme: dark;
+  --c-bg: 10 14 20;
+  --c-panel: 15 22 32;
+  --c-panel2: 20 29 43;
+  --c-line: 30 42 58;
+  --c-ink: 200 211 224;
+  --c-muted: 107 124 147;
+  --c-accent: 34 211 238;
+  --c-accent2: 52 211 153;
+  --c-danger: 248 113 113;
+}
+
+/* Light theme — applied by adding the `light` class to <html> (see lib/theme.js). */
+.light {
+  color-scheme: light;
+  --c-bg: 248 250 252;
+  --c-panel: 255 255 255;
+  --c-panel2: 241 245 249;
+  --c-line: 226 232 240;
+  --c-ink: 15 23 42;
+  --c-muted: 100 116 139;
+  --c-accent: 8 145 178;
+  --c-accent2: 5 150 105;
+  --c-danger: 220 38 38;
+}
+
+@layer base {
+  html, body, #app { height: 100%; }
+  /* Mark the whole window as a Wails file-drop target: with EnableFileDrop, OnFileDrop
+     only fires over elements carrying this custom property. It inherits to all children. */
+  #app { --wails-drop-target: drop; }
+  body {
+    @apply bg-bg text-ink antialiased;
+    margin: 0;
+    background-image:
+      radial-gradient(1200px 600px at 90% -10%, rgb(var(--c-accent) / 0.06), transparent),
+      radial-gradient(900px 500px at -10% 110%, rgb(var(--c-accent2) / 0.05), transparent);
+  }
+}
+
+@layer components {
+  .btn { @apply inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition; }
+  .btn-accent { @apply btn bg-accent/15 text-accent ring-1 ring-accent/30 hover:bg-accent/25; }
+  .btn-ghost { @apply btn text-muted hover:text-ink hover:bg-ink/5; }
+  .card { @apply rounded-xl border border-line bg-panel/80 backdrop-blur; }
+}

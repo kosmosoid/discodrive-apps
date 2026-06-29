@@ -1,0 +1,6 @@
+# Swift / Xcode build
+.build/
+*.xcodeproj/
+build/
+DerivedData/
+.DS_Store

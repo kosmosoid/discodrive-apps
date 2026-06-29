@@ -1,0 +1,43 @@
+// Thin wrapper over the Wails Go bindings so views never touch window.go directly.
+const app = () => window.go.main.App
+
+export const api = {
+  ready: () => app().Ready(),
+  pairInit: (serverUrl) => app().PairInit(serverUrl),
+  pairPoll: (serverUrl, deviceCode, interval) => app().PairPoll(serverUrl, deviceCode, interval),
+  openPairURL: (url) => app().OpenPairURL(url),
+  list: (relPath) => app().List(relPath),
+  refresh: () => app().Refresh(),
+  openFile: (id) => app().OpenFile(id),
+  newFolder: (parentId, name) => app().NewFolder(parentId, name),
+  rename: (id, name) => app().Rename(id, name),
+  move: (id, newParentId) => app().Move(id, newParentId),
+  del: (id) => app().Delete(id),
+  pin: (id) => app().Pin(id),
+  unpin: (id) => app().Unpin(id),
+  removeLocal: (id) => app().RemoveLocal(id),
+  reveal: (id) => app().RevealFile(id),
+  uploadPaths: (parentId, parentRelPath, paths) => app().UploadPaths(parentId, parentRelPath, paths),
+  pickFiles: () => app().PickFiles(),
+  pickFolder: () => app().PickFolder(),
+  // Subscribe to a backend event (upload:progress/done/error/drop). Returns an
+  // unsubscribe function.
+  onEvent: (event, cb) => window.runtime.EventsOn(event, cb),
+  copyText: (t) => window.runtime.ClipboardSetText(t),
+  // settings
+  getSettings: () => app().GetSettings(),
+  saveSettings: (s) => app().SaveSettings(s),
+  serverURL: () => app().ServerURL(),
+  cachePath: () => app().CachePath(),
+  revealCache: () => app().RevealCache(),
+  unpair: () => app().Unpair(),
+  // vaults
+  vaults: () => app().Vaults(),
+  createVault: (name, password) => app().CreateVault(name, password), // resolves to recovery phrase
+  closeAllVaults: () => app().CloseAllVaults(),
+  openVault: (relPath, password) => app().OpenVault(relPath, password),
+  openVaultWithRecovery: (relPath, phrase) => app().OpenVaultWithRecovery(relPath, phrase),
+  openVaultFolder: (relPath) => app().OpenVaultFolder(relPath),
+  closeVault: (relPath) => app().CloseVault(relPath),
+  addFilesToVault: (relPath, paths) => app().AddFilesToVault(relPath, paths),
+}

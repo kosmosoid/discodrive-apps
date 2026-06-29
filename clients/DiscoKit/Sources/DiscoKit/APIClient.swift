@@ -1,0 +1,169 @@
+import Foundation
+
+public enum APIError: Error { case http(Int), notAuthenticated, badResponse }
+
+public actor APIClient {
+    private let baseURL: URL
+    private let deviceToken: String
+    private let session: URLSession
+    private var jwt: String?
+
+    public init(baseURL: URL, deviceToken: String, session: URLSession = DiscoNet.session) {
+        self.baseURL = baseURL
+        self.deviceToken = deviceToken
+        self.session = session
+    }
+
+    private func token() async throws -> String {
+        if let jwt { return jwt }
+        var req = URLRequest(url: baseURL.appendingPathComponent("auth/device/token"))
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(["device_token": deviceToken])
+        let (data, resp) = try await session.data(for: req)
+        guard (resp as? HTTPURLResponse)?.statusCode == 200 else { throw APIError.notAuthenticated }
+        let out = try JSONDecoder().decode([String: String].self, from: data)
+        guard let t = out["token"] else { throw APIError.badResponse }
+        jwt = t
+        return t
+    }
+
+    // Current JWT — for the /sync/events SSE stream that clients open themselves.
+    public func authToken() async throws -> String { try await token() }
+    // Drop the cached JWT (after a 401 on the SSE stream).
+    public func resetAuth() { jwt = nil }
+
+    private func get(path: String, query: [URLQueryItem] = []) async throws -> Data {
+        for attempt in 0..<2 {
+            let tok = try await token()
+            var comps = URLComponents(url: baseURL.appendingPathComponent(path),
+                                      resolvingAgainstBaseURL: false)!
+            if !query.isEmpty { comps.queryItems = query }
+            var req = URLRequest(url: comps.url!)
+            req.setValue("Bearer \(tok)", forHTTPHeaderField: "Authorization")
+            let (data, resp) = try await session.data(for: req)
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            if code == 401 && attempt == 0 { jwt = nil; continue }
+            guard code == 200 || code == 206 else { throw APIError.http(code) }
+            return data
+        }
+        throw APIError.notAuthenticated
+    }
+
+    public func changes(since: Int64, limit: Int) async throws -> ChangesPage {
+        let data = try await get(path: "sync/changes", query: [
+            .init(name: "since", value: String(since)),
+            .init(name: "limit", value: String(limit)),
+        ])
+        return try JSONDecoder().decode(ChangesPage.self, from: data)
+    }
+
+    public func allChanges(since: Int64, onPage: (ChangesPage) -> Void) async throws -> Int64 {
+        var cursor = since
+        while true {
+            let page = try await changes(since: cursor, limit: 500)
+            onPage(page)
+            cursor = page.cursor
+            if !page.hasMore { return cursor }
+        }
+    }
+
+    // Stream the download straight to disk: URLSession writes to a temp file, so we
+    // never buffer the whole body in memory — essential for large files.
+    public func download(nodeID: String, to dst: URL) async throws {
+        let url = baseURL.appendingPathComponent("files/\(nodeID)/content")
+        for attempt in 0..<2 {
+            let tok = try await token()
+            var req = URLRequest(url: url)
+            req.setValue("Bearer \(tok)", forHTTPHeaderField: "Authorization")
+            let (tmp, resp) = try await session.download(for: req)
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            if code == 401 && attempt == 0 { jwt = nil; try? FileManager.default.removeItem(at: tmp); continue }
+            guard code == 200 || code == 206 else {
+                try? FileManager.default.removeItem(at: tmp)
+                throw APIError.http(code)
+            }
+            if FileManager.default.fileExists(atPath: dst.path) { try FileManager.default.removeItem(at: dst) }
+            try FileManager.default.moveItem(at: tmp, to: dst)
+            return
+        }
+        throw APIError.notAuthenticated
+    }
+
+    // Download content into memory (used when decrypting a vault).
+    public func downloadData(nodeID: String) async throws -> Data {
+        try await get(path: "files/\(nodeID)/content")
+    }
+
+    // The user's UI language (stored on the server).
+    public func getLanguage() async throws -> String {
+        let data = try await get(path: "me/language")
+        struct Out: Decodable { let language: String }
+        return try JSONDecoder().decode(Out.self, from: data).language
+    }
+
+    public func setLanguage(_ lang: String) async throws {
+        let body = try JSONEncoder().encode(["language": lang])
+        for attempt in 0..<2 {
+            let tok = try await token()
+            var req = URLRequest(url: baseURL.appendingPathComponent("me/language"))
+            req.httpMethod = "PUT"
+            req.setValue("Bearer \(tok)", forHTTPHeaderField: "Authorization")
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = body
+            let (_, resp) = try await session.data(for: req)
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            if code == 401 && attempt == 0 { jwt = nil; continue }
+            guard code == 200 else { throw APIError.http(code) }
+            return
+        }
+        throw APIError.notAuthenticated
+    }
+
+    // MARK: - Writes
+
+    // Shared authorized request with a body and a single 401 retry.
+    @discardableResult
+    private func send(_ method: String, path: String, query: [URLQueryItem] = [],
+                      body: Data? = nil, contentType: String? = nil, ok: Set<Int>) async throws -> Data {
+        for attempt in 0..<2 {
+            let tok = try await token()
+            var comps = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+            if !query.isEmpty { comps.queryItems = query }
+            var req = URLRequest(url: comps.url!)
+            req.httpMethod = method
+            req.setValue("Bearer \(tok)", forHTTPHeaderField: "Authorization")
+            if let contentType { req.setValue(contentType, forHTTPHeaderField: "Content-Type") }
+            req.httpBody = body
+            let (data, resp) = try await session.data(for: req)
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            if code == 401 && attempt == 0 { jwt = nil; continue }
+            guard ok.contains(code) else { throw APIError.http(code) }
+            return data
+        }
+        throw APIError.notAuthenticated
+    }
+
+    // Upload or replace a file by its relative path.
+    public func uploadFile(relPath: String, data: Data) async throws {
+        try await send("PUT", path: "sync/file", query: [.init(name: "path", value: relPath)],
+                       body: data, contentType: "application/octet-stream", ok: [201])
+    }
+
+    // Create a folder.
+    public func createDir(relPath: String) async throws {
+        let body = try JSONEncoder().encode(["path": relPath])
+        try await send("POST", path: "sync/dir", body: body, contentType: "application/json", ok: [201])
+    }
+
+    // Delete a node (file or folder) — moves it to the trash.
+    public func delete(nodeID: String) async throws {
+        try await send("DELETE", path: "files/\(nodeID)", ok: [204, 200])
+    }
+
+    // Rename a node.
+    public func rename(nodeID: String, newName: String) async throws {
+        let body = try JSONEncoder().encode(["name": newName])
+        try await send("PATCH", path: "files/\(nodeID)/rename", body: body, contentType: "application/json", ok: [200])
+    }
+}

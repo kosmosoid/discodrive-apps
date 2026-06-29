@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancelar</string>
+    <string name="back">Atrás</string>
+    <string name="password">Contraseña</string>
+    <string name="name">Nombre</string>
+    <string name="on">Activado</string>
+    <string name="off">Desactivado</string>
+    <string name="vault_root">Bóveda</string>
+
+    <string name="perm_title">Se necesita acceso al almacenamiento</string>
+    <string name="perm_body">Concede «Acceso a todos los archivos» para que los archivos descargados sean accesibles por otras apps (p. ej. KeePass).</string>
+    <string name="perm_grant">Conceder acceso</string>
+
+    <string name="setup_server_url">URL del servidor</string>
+    <string name="setup_self_signed">Certificado autofirmado</string>
+    <string name="setup_self_signed_warn">Desactiva la verificación del certificado TLS: tu token y archivos pueden ser interceptados. Úsalo solo en una red de confianza.</string>
+    <string name="setup_code">Código: %1$s</string>
+    <string name="setup_confirm_code">Confirma este código en el navegador para emparejar.</string>
+    <string name="setup_pair">Emparejar dispositivo</string>
+
+    <string name="menu_new_folder">Nueva carpeta</string>
+    <string name="menu_upload">Subir</string>
+    <string name="menu_settings">Ajustes</string>
+    <string name="action_open">Abrir</string>
+    <string name="action_download">Descargar</string>
+    <string name="action_pin">Fijar</string>
+    <string name="action_unpin">Desfijar</string>
+    <string name="action_remove_local">Eliminar copia local</string>
+    <string name="action_rename">Renombrar</string>
+    <string name="action_move">Mover</string>
+    <string name="action_delete">Eliminar</string>
+
+    <string name="dialog_new_folder_title">Nueva carpeta</string>
+    <string name="dialog_rename_title">Renombrar</string>
+    <string name="dialog_new_name">Nuevo nombre</string>
+
+    <string name="move_to">Mover a: %1$s</string>
+    <string name="move_up">⬑ Subir</string>
+    <string name="move_here">Mover aquí</string>
+
+    <string name="status_stale">desactualizado (toca «Descargar» para actualizar)</string>
+    <string name="status_pinned">fijado</string>
+    <string name="status_cached">en caché</string>
+
+    <string name="unlock_vault">Desbloquear bóveda</string>
+    <string name="unlock">Desbloquear</string>
+    <string name="menu_lock_vault">Bloquear bóveda</string>
+    <string name="vault_unlocking">Desbloqueando bóveda…</string>
+    <string name="vault_open_failed">No se pudo abrir la bóveda</string>
+
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_language_system">Predeterminado del sistema</string>
+    <string name="settings_server">Servidor</string>
+    <string name="settings_unpair">Desemparejar</string>
+    <string name="settings_unpair_confirm_title">¿Desemparejar dispositivo?</string>
+    <string name="settings_unpair_confirm_body">Esto elimina el emparejamiento y el índice local de este dispositivo.</string>
+    <string name="settings_version">Versión</string>
+
+    <string name="cd_back">Atrás</string>
+    <string name="cd_refresh">Actualizar</string>
+    <string name="cd_menu">Menú</string>
+    <string name="cd_actions">Acciones</string>
+    <string name="cd_unlock">Desbloquear bóveda</string>
+    <string name="cd_lock">Bloquear bóveda</string>
+</resources>

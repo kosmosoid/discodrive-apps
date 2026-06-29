@@ -1,0 +1,9 @@
+{
+  "version": 999,
+  "scryptSalt": "rvnhD8CNTxE=",
+  "scryptCostParam": 32768,
+  "scryptBlockSize": 8,
+  "primaryMasterKey": "b5usSbxIAid5zB68PrRFNASOT92NlN/OAhhe5PLT2WIzHVjDx7TdWg==",
+  "hmacMasterKey": "h3b2WnVqoyURfRTfDj5Va6mUHayZt9nfNI+02boVc4SXATYckIMTWQ==",
+  "versionMac": "hU08fq2tiYrDqTpjUTE4Nx1wy0lPh7rarqazsbuuG3g="
+}

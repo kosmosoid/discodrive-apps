@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ok">OK</string>
+    <string name="cancel">Откажи</string>
+    <string name="back">Назад</string>
+    <string name="password">Лозинка</string>
+    <string name="name">Назив</string>
+    <string name="on">Укљ.</string>
+    <string name="off">Искљ.</string>
+    <string name="vault_root">Сеф</string>
+
+    <string name="perm_title">Потребан је приступ складишту</string>
+    <string name="perm_body">Дозволите „Приступ свим датотекама“ како би преузете датотеке биле доступне другим апликацијама (нпр. KeePass).</string>
+    <string name="perm_grant">Дозволи приступ</string>
+
+    <string name="setup_server_url">URL сервера</string>
+    <string name="setup_self_signed">Самопотписани сертификат</string>
+    <string name="setup_self_signed_warn">Искључује проверу TLS сертификата — токен и фајлови могу бити пресретнути. Користите само у поузданој мрежи.</string>
+    <string name="setup_code">Код: %1$s</string>
+    <string name="setup_confirm_code">Потврдите овај код у прегледачу да упарите.</string>
+    <string name="setup_pair">Упари уређај</string>
+
+    <string name="menu_new_folder">Нова фасцикла</string>
+    <string name="menu_upload">Отпреми</string>
+    <string name="menu_settings">Подешавања</string>
+    <string name="action_open">Отвори</string>
+    <string name="action_download">Преузми</string>
+    <string name="action_pin">Закачи</string>
+    <string name="action_unpin">Откачи</string>
+    <string name="action_remove_local">Уклони локалну копију</string>
+    <string name="action_rename">Преименуј</string>
+    <string name="action_move">Премести</string>
+    <string name="action_delete">Обриши</string>
+
+    <string name="dialog_new_folder_title">Нова фасцикла</string>
+    <string name="dialog_rename_title">Преименуј</string>
+    <string name="dialog_new_name">Нови назив</string>
+
+    <string name="move_to">Премести у: %1$s</string>
+    <string name="move_up">⬑ Горе</string>
+    <string name="move_here">Премести овде</string>
+
+    <string name="status_stale">застарело (додирните „Преузми“ за освежавање)</string>
+    <string name="status_pinned">закачено</string>
+    <string name="status_cached">кеширано</string>
+
+    <string name="unlock_vault">Откључај сеф</string>
+    <string name="unlock">Откључај</string>
+    <string name="menu_lock_vault">Закључај сеф</string>
+    <string name="vault_unlocking">Откључавање сефа…</string>
+    <string name="vault_open_failed">Није могуће отворити сеф</string>
+
+    <string name="settings_title">Подешавања</string>
+    <string name="settings_language">Језик</string>
+    <string name="settings_language_system">Системски</string>
+    <string name="settings_server">Сервер</string>
+    <string name="settings_unpair">Распари</string>
+    <string name="settings_unpair_confirm_title">Распарити уређај?</string>
+    <string name="settings_unpair_confirm_body">Ово уклања упаривање и локални индекс са овог уређаја.</string>
+    <string name="settings_version">Верзија</string>
+
+    <string name="cd_back">Назад</string>
+    <string name="cd_refresh">Освежи</string>
+    <string name="cd_menu">Мени</string>
+    <string name="cd_actions">Радње</string>
+    <string name="cd_unlock">Откључај сеф</string>
+    <string name="cd_lock">Закључај сеф</string>
+</resources>
