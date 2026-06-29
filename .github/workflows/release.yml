@@ -16,10 +16,11 @@ jobs:
   daemon:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: daemon/go.sum
       - name: Build daemon for all targets
         run: |
           make daemon OS=darwin  ARCH=amd64
@@ -32,7 +33,7 @@ jobs:
           cd dist
           for d in */; do tar czf "discodrive-daemon-${d%/}.tar.gz" -C "$d" .; done
           ls -la
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: daemon
           path: dist/*.tar.gz
@@ -40,11 +41,12 @@ jobs:
   desktop-mac-win:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/setup-node@v4
+          cache-dependency-path: daemon/go.sum
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - name: Install desktop toolchain + NSIS
@@ -77,7 +79,7 @@ jobs:
             cp "dist/windows/discodrive-wails-$a-installer.exe" "out/DiscoDrive-$VER-windows-$a-installer-unsigned.exe"
           done
           ls -la out
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: desktop-mac-win
           path: out/*
@@ -85,7 +87,7 @@ jobs:
   desktop-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Resolve version + stamp wails.json
         id: ver
         run: |
@@ -104,7 +106,7 @@ jobs:
           cp dist/linux/DiscoDrive "out/DiscoDrive-$VER-linux-amd64"
           chmod +x "out/DiscoDrive-$VER-linux-amd64"
           ls -la out
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: desktop-linux
           path: out/*
@@ -112,11 +114,12 @@ jobs:
   android:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/setup-java@v4
+          cache-dependency-path: daemon/go.sum
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -139,7 +142,7 @@ jobs:
           mkdir -p out
           find clients -name '*.apk' -path '*/outputs/*' -exec cp {} out/ \; || true
           ls -la out || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android
           path: out/*.apk
@@ -150,7 +153,8 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
       - name: Flatten
@@ -158,8 +162,25 @@ jobs:
           mkdir -p release
           find artifacts -type f -exec cp -n {} release/ \;
           ls -la release
+      - name: Extract release notes from CHANGELOG.md
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          # Pull the section under the heading matching this version (## 0.0.1,
+          # ## v0.0.1, or ## [0.0.1] - date) up to the next ## heading.
+          awk -v ver="$VER" '
+            /^##[[:space:]]/ {
+              if (grab) exit
+              line=$0; gsub(/[][]/,"",line)
+              if (line ~ ("^##[[:space:]]+v?" ver "([^0-9]|$)")) { grab=1; next }
+            }
+            grab { print }
+          ' CHANGELOG.md > notes.md 2>/dev/null || true
+          # Fallback so the release body is never empty.
+          if [ ! -s notes.md ]; then printf 'DiscoDrive %s\n' "$VER" > notes.md; fi
+          echo "----- release body -----"; cat notes.md
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: release/*
           fail_on_unmatched_files: false
+          body_path: notes.md
           generate_release_notes: true
