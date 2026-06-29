@@ -103,11 +103,11 @@ desktop-windows:
 
 # ---------- MOBILE BINDINGS ----------
 bind-ios:
-	cd $(DAEMON_DIR) && gomobile bind -target=ios -o mobile/build/Kfmobile.xcframework ./mobile
+	cd $(DAEMON_DIR) && mkdir -p mobile/build && gomobile bind -target=ios -o mobile/build/Kfmobile.xcframework ./mobile
 	@echo "built → daemon/mobile/build/Kfmobile.xcframework"
 
 bind-android:
-	cd $(DAEMON_DIR) && gomobile bind -target=android -androidapi 21 -o mobile/build/kfmobile.aar ./mobile
+	cd $(DAEMON_DIR) && mkdir -p mobile/build && gomobile bind -target=android -androidapi 21 -o mobile/build/kfmobile.aar ./mobile
 	mkdir -p clients/android-discodrive/app/libs clients/android-fastsync/app/libs
 	cp $(DAEMON_DIR)/mobile/build/kfmobile.aar clients/android-discodrive/app/libs/kfmobile.aar
 	cp $(DAEMON_DIR)/mobile/build/kfmobile.aar clients/android-fastsync/app/libs/kfmobile.aar
