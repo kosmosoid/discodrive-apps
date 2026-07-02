@@ -10,6 +10,7 @@ import (
 
 	"discodrive.org/daemon/internal/engine"
 	"discodrive.org/daemon/internal/index"
+	"discodrive.org/daemon/internal/safepath"
 )
 
 // ServerAPI is the subset of *protocol.Client the controller depends on, narrowed
@@ -140,8 +141,12 @@ func (c *Controller) fetch(ctx context.Context, nodeID, state string) (string, e
 		return "", fmt.Errorf("desktop: unknown node %q", nodeID)
 	}
 	// Cache content under its real relative path so the local folder mirrors the
-	// server tree with human-readable names (not opaque node IDs).
-	dest := filepath.Join(c.contentDir, filepath.FromSlash(n.RelPath))
+	// server tree with human-readable names (not opaque node IDs). RelPath is
+	// server-controlled, so contain it to contentDir (reject ../ traversal + symlinks).
+	dest, err := safepath.Join(c.contentDir, n.RelPath)
+	if err != nil {
+		return "", err
+	}
 	if err := os.MkdirAll(filepath.Dir(dest), 0o700); err != nil {
 		return "", err
 	}
@@ -230,7 +235,11 @@ func (c *Controller) reconcileLocalRelPath(nodeID, newRelPath string) {
 	if oldPath == "" {
 		return
 	}
-	newPath := filepath.Join(c.contentDir, filepath.FromSlash(newRelPath))
+	newPath, err := safepath.Join(c.contentDir, newRelPath)
+	if err != nil {
+		_ = c.RemoveLocal(nodeID)
+		return
+	}
 	if oldPath == newPath {
 		return
 	}

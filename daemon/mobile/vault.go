@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"path/filepath"
 
 	"discodrive.org/daemon/internal/index"
 	"discodrive.org/daemon/internal/protocol"
+	"discodrive.org/daemon/internal/safepath"
 	"discodrive.org/daemon/internal/vault"
 )
 
@@ -77,7 +77,12 @@ func (m *Vault) OpenFile(fileStoragePath, plainName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dst := filepath.Join(m.tmpDir, plainName)
+	// plainName is a decrypted filename; contain it to tmpDir so a crafted name
+	// (path separators / ..) can't write outside the app-private decrypt dir.
+	dst, err := safepath.Join(m.tmpDir, plainName)
+	if err != nil {
+		return "", err
+	}
 	if err := os.WriteFile(dst, data, 0o600); err != nil {
 		return "", err
 	}

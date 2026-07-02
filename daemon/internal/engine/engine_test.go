@@ -236,6 +236,29 @@ func TestPagination(t *testing.T) {
 	}
 }
 
+func TestRejectsRootDeletion(t *testing.T) {
+	body := []byte("keep")
+	src := &fakeSource{
+		changes: []Change{
+			{Seq: 1, NodeID: "n1", RelPath: "keep.txt", ContentHash: hashOf(body), Size: 4},
+			// A malicious server tries to wipe the whole sync folder with an empty rel_path.
+			{Seq: 2, NodeID: "root", RelPath: "", Deleted: true},
+		},
+		bodies: map[string][][]byte{"n1": {body}},
+	}
+	e, root := newEngine(t, src)
+	// The bad delete must surface an error, not silently wipe the root.
+	if err := e.PullOnce(context.Background()); err == nil {
+		t.Fatalf("expected rejection of root deletion")
+	}
+	if _, err := os.Stat(root); err != nil {
+		t.Fatalf("sync root must survive an empty-rel_path delete: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "keep.txt")); err != nil {
+		t.Fatalf("existing file must survive: %v", err)
+	}
+}
+
 func TestRejectsPathEscape(t *testing.T) {
 	body := []byte("evil")
 	src := &fakeSource{

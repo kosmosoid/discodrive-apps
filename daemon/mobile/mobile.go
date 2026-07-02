@@ -20,7 +20,11 @@ import (
 func setInsecure(insecure bool) {
 	if insecure {
 		_ = os.Setenv("DISCODRIVE_INSECURE_TLS", "1")
+		return
 	}
+	// Clear it too: otherwise once any call enabled insecure TLS the whole process
+	// stayed insecure until restart, even after the user turned the toggle back off.
+	_ = os.Unsetenv("DISCODRIVE_INSECURE_TLS")
 }
 
 // Pairing carries what the app needs to complete device pairing.

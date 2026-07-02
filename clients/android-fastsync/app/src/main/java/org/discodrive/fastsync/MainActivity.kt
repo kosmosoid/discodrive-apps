@@ -91,6 +91,13 @@ fun SetupScreen(vm: SyncViewModel, ui: UiState) {
             Switch(checked = insecure, onCheckedChange = { insecure = it })
             Spacer(Modifier.width(8.dp)); Text("Self-signed certificate")
         }
+        if (insecure) {
+            Text(
+                "Disables TLS certificate checks — your token and files can be intercepted. Use only on a network you trust.",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
         if (ui.pendingUserCode != null) {
             Text("Code: ${ui.pendingUserCode}", style = MaterialTheme.typography.titleMedium)
             Text("Confirm this code in the browser to pair.")

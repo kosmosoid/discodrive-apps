@@ -9,6 +9,7 @@ import (
 
 	"discodrive.org/daemon/internal/index"
 	"discodrive.org/daemon/internal/protocol"
+	"discodrive.org/daemon/internal/safepath"
 )
 
 // Browser is a bindable, index-based (offline) file browser over the whole vault. Lists come
@@ -122,7 +123,12 @@ func (b *Browser) download(nodeID, state string) (string, error) {
 	if err != nil || !ok {
 		return "", err
 	}
-	dst := filepath.Join(b.rootDir, filepath.FromSlash(n.RelPath))
+	// RelPath is server-controlled; contain it to rootDir so a malicious server can't
+	// write outside the download folder via ../ traversal or a symlinked component.
+	dst, err := safepath.Join(b.rootDir, n.RelPath)
+	if err != nil {
+		return "", err
+	}
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return "", err
 	}

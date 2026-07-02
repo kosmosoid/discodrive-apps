@@ -14,6 +14,10 @@ struct SetupView: View {
                 .textFieldStyle(.roundedBorder)
                 .autocorrectionDisabled().textInputAutocapitalization(.never).keyboardType(.URL)
             Toggle("Self-signed certificate", isOn: $insecure)
+            if insecure {
+                Text("Disables TLS certificate checks — your token and files can be intercepted. Use only on a network you trust.")
+                    .foregroundStyle(.red).font(.caption).multilineTextAlignment(.center)
+            }
             if let code = model.pendingUserCode {
                 Text("Code: \(code)").font(.headline)
                 Text("Confirm this code in the browser to pair.")

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"discodrive.org/daemon/internal/safepath"
 	"discodrive.org/daemon/internal/vault"
 	"discodrive.org/daemon/internal/vaultmgr"
 )
@@ -218,7 +219,14 @@ func (c *Controller) downloadVaultCiphertext(ctx context.Context, vaultRelPath s
 			rel = n.RelPath[len(prefix):]
 		}
 
-		localPath := filepath.Join(tmp, filepath.FromSlash(rel))
+		// rel derives from the server's RelPath; contain it to the per-open temp dir
+		// (which lives OUTSIDE the vault storage) so a malicious server can't traverse
+		// out of tmp via ../ in a node path.
+		localPath, err := safepath.Join(tmp, rel)
+		if err != nil {
+			os.RemoveAll(tmp)
+			return nil, vaultmgr.VaultInfo{}, "", err
+		}
 		if n.IsDir {
 			if err := os.MkdirAll(localPath, 0o755); err != nil {
 				os.RemoveAll(tmp)

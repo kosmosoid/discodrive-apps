@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"discodrive.org/daemon/internal/index"
+	"discodrive.org/daemon/internal/safepath"
 )
 
 const pageLimit = 500
@@ -124,48 +125,10 @@ func (e *Engine) sweepOrphans() error {
 // abs converts a server rel_path to an absolute path and verifies it stays within root.
 // Besides the lexical containment check, it rejects paths whose existing components
 // include a symlink: os.RemoveAll/MkdirAll/Rename would otherwise follow a symlinked
-// directory and read, write, or delete data outside the sync folder.
+// directory and read, write, or delete data outside the sync folder. The same guard is
+// shared (via internal/safepath) by the desktop and mobile file-write paths.
 func (e *Engine) abs(rel string) (string, error) {
-	root := filepath.Clean(e.root)
-	p := filepath.Clean(filepath.Join(root, filepath.FromSlash(rel)))
-	if p != root && !strings.HasPrefix(p, root+string(os.PathSeparator)) {
-		return "", fmt.Errorf("path escapes sync root: %q", rel)
-	}
-	if err := noSymlinkComponents(root, p); err != nil {
-		return "", err
-	}
-	return p, nil
-}
-
-// noSymlinkComponents walks each path component below root and fails if an existing
-// one is a symlink. Components that don't exist yet are fine — they'll be created as
-// real directories. (Best-effort against pre-planted symlinks; not a TOCTOU guarantee.)
-func noSymlinkComponents(root, p string) error {
-	rel, err := filepath.Rel(root, p)
-	if err != nil {
-		return err
-	}
-	if rel == "." {
-		return nil
-	}
-	cur := root
-	for _, part := range strings.Split(rel, string(os.PathSeparator)) {
-		if part == "" || part == "." {
-			continue
-		}
-		cur = filepath.Join(cur, part)
-		fi, lerr := os.Lstat(cur)
-		if lerr != nil {
-			if os.IsNotExist(lerr) {
-				return nil // the rest of the path doesn't exist yet — safe
-			}
-			return lerr
-		}
-		if fi.Mode()&os.ModeSymlink != 0 {
-			return fmt.Errorf("path component is a symlink, refusing to follow: %q", cur)
-		}
-	}
-	return nil
+	return safepath.Join(e.root, rel)
 }
 
 func (e *Engine) apply(ctx context.Context, c Change) error {
@@ -175,6 +138,11 @@ func (e *Engine) apply(ctx context.Context, c Change) error {
 	}
 
 	if c.Deleted {
+		// Never let an empty / "." / "/" rel_path resolve the delete to the sync root
+		// itself: a malicious server could otherwise RemoveAll the whole synced folder.
+		if abs == filepath.Clean(e.root) {
+			return fmt.Errorf("refusing to delete sync root (rel_path %q)", c.RelPath)
+		}
 		if err := os.RemoveAll(abs); err != nil {
 			return err
 		}
