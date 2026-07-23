@@ -21,6 +21,10 @@ go.work.sum
 
 *.xcodeproj/
 build/
+# Wails reads its icon/bundle assets from build/ — those must be in git, or CI
+# builds regenerate the default Wails "W" icon. Build outputs stay ignored below.
+!/daemon/cmd/discodrive-wails/build/
+/daemon/cmd/discodrive-wails/build/windows/installer/tmp/
 DerivedData/
 .build/
 .swiftpm/

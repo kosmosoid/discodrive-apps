@@ -13,27 +13,31 @@ VERSION ?=
 
 ifeq ($(TRAY),1)
   DAEMON_TAGS := -tags tray
-  DAEMON_CGO  := 1
+  # fyne systray needs cgo only on darwin (AppKit); Linux (D-Bus) and Windows
+  # (Win32) tray builds are pure Go and cross-compile freely.
+  DAEMON_CGO  := $(if $(filter darwin,$(OS)),1,0)
 else
   DAEMON_TAGS :=
   DAEMON_CGO  := 0
 endif
 
 EXE := $(if $(filter windows,$(OS)),.exe,)
-OUT := $(DIST)/$(OS)-$(ARCH)
+# Tray builds get their own dist dir so both daemon flavors can coexist.
+OUT := $(DIST)/$(OS)-$(ARCH)$(if $(filter 1,$(TRAY)),-tray,)
 
 GRADLE_DD := $(if $(wildcard clients/android-discodrive/gradlew),./gradlew,gradle)
 GRADLE_FS := $(if $(wildcard clients/android-fastsync/gradlew),./gradlew,gradle)
 
-.PHONY: help daemon daemon-all bind-ios bind-android \
+.PHONY: help daemon daemon-all daemon-tray-all bind-ios bind-android \
         app-macos app-ios app-ios-fastsync app-android app-android-fastsync \
         desktop app-desktop-macos dmg-desktop-macos desktop-linux desktop-windows \
         all-go test test-go test-swift doctor clean
 
 help:
 	@echo "discodrive-apps — build targets (override OS=, ARCH=, TRAY=1):"
-	@echo "  daemon                headless sync daemon for OS/ARCH  (TRAY=1 ⇒ menubar/tray, CGO)"
-	@echo "  daemon-all            headless daemon: darwin amd64+arm64, linux amd64, windows amd64"
+	@echo "  daemon                headless sync daemon for OS/ARCH  (TRAY=1 ⇒ menubar/tray flavor)"
+	@echo "  daemon-all            server daemon (no tray): darwin amd64+arm64, linux amd64, windows amd64"
+	@echo "  daemon-tray-all       desktop daemon (tray): linux amd64+arm64, windows amd64 (+darwin on macOS)"
 	@echo "  desktop               desktop client for host (darwin/universal on macOS)"
 	@echo "  app-desktop-macos     universal DiscoDrive.app (ad-hoc signed)"
 	@echo "  dmg-desktop-macos     package the desktop .app into dist/*.dmg  (VERSION=x.y.z names the file)"
@@ -65,6 +69,17 @@ daemon-all:
 	$(MAKE) daemon OS=darwin  ARCH=arm64
 	$(MAKE) daemon OS=linux   ARCH=amd64
 	$(MAKE) daemon OS=windows ARCH=amd64
+
+# Desktop flavor (tray menu + icon). Pure-Go targets build anywhere; the darwin
+# tray needs cgo, so it is only attempted on a macOS host.
+daemon-tray-all:
+	$(MAKE) daemon OS=linux   ARCH=amd64 TRAY=1
+	$(MAKE) daemon OS=linux   ARCH=arm64 TRAY=1
+	$(MAKE) daemon OS=windows ARCH=amd64 TRAY=1
+ifeq ($(HOST_OS),darwin)
+	$(MAKE) daemon OS=darwin ARCH=amd64 TRAY=1
+	$(MAKE) daemon OS=darwin ARCH=arm64 TRAY=1
+endif
 
 # ---------- DESKTOP ----------
 DESKTOP_DIR := $(DAEMON_DIR)/cmd/discodrive-wails

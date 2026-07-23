@@ -21,13 +21,16 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: daemon/go.sum
-      - name: Build daemon for all targets
+      - name: Build server daemon (no tray) for all targets
         run: |
           make daemon OS=darwin  ARCH=amd64
           make daemon OS=darwin  ARCH=arm64
           make daemon OS=linux   ARCH=amd64
           make daemon OS=linux   ARCH=arm64
           make daemon OS=windows ARCH=amd64
+      - name: Build desktop daemon (tray) — pure-Go targets
+        # darwin tray needs cgo and is built in the desktop-mac-win job.
+        run: make daemon-tray-all
       - name: Package
         run: |
           cd dist
@@ -66,6 +69,12 @@ jobs:
         run: make dmg-desktop-macos VERSION="${{ steps.ver.outputs.version }}"
       - name: Build Windows .exe + installers (cross-built)
         run: make desktop-windows
+      - name: Build desktop daemon (tray, macOS — needs cgo)
+        run: |
+          make daemon OS=darwin ARCH=amd64 TRAY=1
+          make daemon OS=darwin ARCH=arm64 TRAY=1
+          cd dist
+          for d in darwin-*-tray/; do tar czf "discodrive-daemon-${d%/}.tar.gz" -C "$d" .; done
       - name: Collect artifacts (unsigned)
         env:
           VER: ${{ steps.ver.outputs.version }}
@@ -78,6 +87,7 @@ jobs:
             cp "dist/windows/DiscoDrive-$a.exe"                 "out/DiscoDrive-$VER-windows-$a-unsigned.exe"
             cp "dist/windows/discodrive-wails-$a-installer.exe" "out/DiscoDrive-$VER-windows-$a-installer-unsigned.exe"
           done
+          cp dist/discodrive-daemon-*.tar.gz out/
           ls -la out
       - uses: actions/upload-artifact@v7
         with:
