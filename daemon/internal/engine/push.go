@@ -2,8 +2,10 @@ package engine
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"path"
 	"sort"
 	"strings"
 
@@ -24,18 +26,83 @@ type Sink interface {
 	DeleteRemote(ctx context.Context, relPath string) error
 }
 
+// MoveSink is an optional Sink extension: server-side move/rename by node id
+// (PATCH /files/{id}/move and /rename). When the sink implements it, PushLocal
+// turns local file moves into these calls instead of delete + re-upload, keeping
+// the server node (id, version history) alive.
+type MoveSink interface {
+	MoveNode(ctx context.Context, nodeID, newParentID string) error
+	RenameNode(ctx context.Context, nodeID, newName string) error
+}
+
+// pairLocalMoves rewrites a delete of path A plus a create of path B with the same
+// content hash into a single move change. Duplicate hashes pair first-come-first-served:
+// content is identical, so at worst node identities swap between equal files.
+func pairLocalMoves(changes []LocalChange) []LocalChange {
+	deletesByHash := map[string][]int{}
+	for i, c := range changes {
+		if c.Op == "delete" && !c.IsDir && c.Hash != "" {
+			deletesByHash[c.Hash] = append(deletesByHash[c.Hash], i)
+		}
+	}
+	movedFrom := map[int]int{} // create index -> consumed delete index
+	consumed := map[int]bool{}
+	for i, c := range changes {
+		if c.Op == "create" && !c.IsDir && c.Hash != "" {
+			if q := deletesByHash[c.Hash]; len(q) > 0 {
+				movedFrom[i] = q[0]
+				consumed[q[0]] = true
+				deletesByHash[c.Hash] = q[1:]
+			}
+		}
+	}
+	out := make([]LocalChange, 0, len(changes))
+	for i, c := range changes {
+		if consumed[i] {
+			continue // delete absorbed into a move
+		}
+		if j, ok := movedFrom[i]; ok {
+			out = append(out, LocalChange{Op: "move", RelPath: c.RelPath, OldRelPath: changes[j].RelPath, Hash: c.Hash, Size: c.Size})
+			continue
+		}
+		out = append(out, c)
+	}
+	return out
+}
+
 // PushLocal detects local changes and uploads them via sink, updating the index.
 func (e *Engine) PushLocal(ctx context.Context, sink Sink) error {
 	changes, err := e.DetectLocal()
 	if err != nil {
 		return err
 	}
+	mover, canMove := sink.(MoveSink)
+	if canMove {
+		changes = pairLocalMoves(changes)
+	}
+	// Creates go first (parents before children), then moves (their target parents
+	// now exist server-side), deletes last (a moved-out old dir is deleted only
+	// after its files left it — the server deletes dirs recursively).
+	rank := func(op string) int {
+		switch op {
+		case "delete":
+			return 2
+		case "move":
+			return 1
+		default:
+			return 0
+		}
+	}
 	sort.SliceStable(changes, func(i, j int) bool {
+		ri, rj := rank(changes[i].Op), rank(changes[j].Op)
+		if ri != rj {
+			return ri < rj
+		}
 		di, dj := depth(changes[i].RelPath), depth(changes[j].RelPath)
-		if changes[i].Op == "delete" && changes[j].Op == "delete" {
+		if ri == 2 {
 			return di > dj // deeper deletes go first
 		}
-		return di < dj // creates/dirs top-down
+		return di < dj // creates/moves top-down
 	})
 
 	knownNodes := map[string]index.Node{}
@@ -90,6 +157,49 @@ func (e *Engine) PushLocal(ctx context.Context, sink Sink) error {
 				hash = c.Hash
 			}
 			if err := e.idx.Put(index.Node{NodeID: rn.NodeID, RelPath: c.RelPath, Version: rn.Version, ContentHash: hash, Size: c.Size}); err != nil {
+				return err
+			}
+		case "move":
+			// Produced only when the sink implements MoveSink (see pairing above).
+			n, known := knownNodes[c.OldRelPath]
+			if !known {
+				// Deletes are generated from the same index snapshot, so this only
+				// happens if the index read above failed; retry next cycle.
+				return fmt.Errorf("move source %s not in index", c.OldRelPath)
+			}
+			newParent, oldParent := path.Dir(c.RelPath), path.Dir(c.OldRelPath)
+			if newParent != oldParent {
+				parentID := ""
+				if newParent != "." {
+					if pn, ok, err := e.idx.GetByPath(newParent); err != nil {
+						return err
+					} else if ok {
+						parentID = pn.NodeID
+					} else {
+						// Parent dir has no indexed node (e.g. implicitly created);
+						// EnsureDir is idempotent and returns its id.
+						rn, err := sink.EnsureDir(ctx, newParent)
+						if err != nil {
+							return err
+						}
+						if err := e.idx.Put(index.Node{NodeID: rn.NodeID, RelPath: newParent, IsDir: true, Version: rn.Version}); err != nil {
+							return err
+						}
+						parentID = rn.NodeID
+					}
+				}
+				if err := mover.MoveNode(ctx, n.NodeID, parentID); err != nil {
+					return err
+				}
+			}
+			if path.Base(c.RelPath) != path.Base(c.OldRelPath) {
+				if err := mover.RenameNode(ctx, n.NodeID, path.Base(c.RelPath)); err != nil {
+					return err
+				}
+			}
+			// Version stays as-is (the server bumps it on move); the next pull's
+			// feed entry refreshes it via the hash-match no-op path.
+			if err := e.idx.Put(index.Node{NodeID: n.NodeID, RelPath: c.RelPath, Version: n.Version, ContentHash: n.ContentHash, Size: n.Size}); err != nil {
 				return err
 			}
 		case "delete":

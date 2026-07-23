@@ -16,12 +16,15 @@ func isOSJunk(name string) bool {
 }
 
 // LocalChange is a local modification discovered by scanning the sync folder.
+// Op "move" is never produced by DetectLocal itself: PushLocal pairs a delete and a
+// create with the same content hash into one move when the sink supports it.
 type LocalChange struct {
-	Op      string // create | update | delete
-	RelPath string
-	IsDir   bool
-	Hash    string
-	Size    int64
+	Op         string // create | update | delete | move
+	RelPath    string
+	OldRelPath string // move only: the previous rel path
+	IsDir      bool
+	Hash       string
+	Size       int64
 }
 
 // DetectLocal scans root and diffs it against the index: new, modified, and deleted nodes.
@@ -89,7 +92,9 @@ func (e *Engine) DetectLocal() ([]LocalChange, error) {
 	}
 	for _, n := range knownNodes {
 		if !seen[n.RelPath] {
-			out = append(out, LocalChange{Op: "delete", RelPath: n.RelPath, IsDir: n.IsDir})
+			// Hash comes from the index so PushLocal can pair this delete with a
+			// same-content create into a move.
+			out = append(out, LocalChange{Op: "delete", RelPath: n.RelPath, IsDir: n.IsDir, Hash: n.ContentHash, Size: n.Size})
 		}
 	}
 	return out, nil

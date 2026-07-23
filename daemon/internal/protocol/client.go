@@ -178,6 +178,7 @@ func (c *Client) Download(ctx context.Context, nodeID string, w io.Writer) error
 
 var _ engine.Source = (*Client)(nil)
 var _ engine.Sink = (*Client)(nil)
+var _ engine.MoveSink = (*Client)(nil)
 
 func (c *Client) clearJWT() {
 	c.mu.Lock()
