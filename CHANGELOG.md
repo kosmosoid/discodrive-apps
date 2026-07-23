@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.0.3
+
+### Fixed
+
+- Sync daemon: renaming or moving a folder on the server no longer leaves an empty
+  "ghost" copy of the old folder on disk that then got re-created on the server.
+- Sync daemon: files moved or renamed locally are now sent to the server as a move,
+  preserving file identity instead of deleting and re-uploading the content.
+- Desktop app: logging out now clears all local state (index and cached files), so
+  switching to another server no longer shows the old server's files and never
+  uploads anything left over to the new server.
+- Sync daemon: re-pairing to a different server resets local sync state and defaults
+  to a fresh per-server sync folder; the old folder is left untouched on disk.
+- Sync daemon: only one instance per profile can run at a time, and quitting from the
+  tray menu is final — the macOS agent restarts the daemon only after a crash.
+- Sync daemon: `run` and `tray` started from a terminal detach and release the
+  console (use `--foreground` to keep it attached); service starts are unaffected.
+- Desktop app: release builds now ship with the proper application icon.
+- Sync daemon: the tray icon now uses the DiscoDrive app icon.
+
+### Added
+
+- Desktop app: a "Downloads" button in the file browser toolbar opens the folder
+  with downloaded files.
+- Releases now ship two daemon flavors: headless for servers and tray for desktops
+  (`discodrive-daemon-<os>-<arch>-tray.tar.gz`).
+
 ## 0.0.2
 
 ### Security
