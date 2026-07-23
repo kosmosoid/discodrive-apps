@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { RefreshCw, FolderPlus, Upload, FolderUp } from 'lucide-vue-next'
+import { RefreshCw, FolderPlus, FolderOpen, Upload, FolderUp } from 'lucide-vue-next'
 import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
 import { sortEntries } from '../lib/format.js'
@@ -173,6 +173,10 @@ defineExpose({ reload, current, dropFiles })
       <button class="btn-ghost" :disabled="busy" @click="refresh">
         <RefreshCw :size="14" :class="busy ? 'animate-spin' : ''" />
         {{ t('common.refresh') }}
+      </button>
+      <button class="btn-ghost" :title="t('settings.openCache')" @click="api.revealCache()">
+        <FolderOpen :size="14" />
+        {{ t('browser.downloads') }}
       </button>
     </div>
 
