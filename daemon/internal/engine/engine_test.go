@@ -163,6 +163,97 @@ func TestApplyMove(t *testing.T) {
 	}
 }
 
+func TestApplyDirRenameMovesSubtree(t *testing.T) {
+	body := []byte("content")
+	calls := 0
+	src := &countingSource{fakeSource: fakeSource{
+		changes: []Change{
+			{Seq: 1, Op: "create", NodeID: "d1", RelPath: "docs", IsDir: true},
+			{Seq: 2, Op: "create", NodeID: "n1", RelPath: "docs/a.txt", ContentHash: hashOf(body), Size: int64(len(body))},
+			// Server-side folder rename: the feed now carries one event per live
+			// descendant (parents before children), all with op=move.
+			{Seq: 3, Op: "move", NodeID: "d1", RelPath: "archive", IsDir: true},
+			{Seq: 4, Op: "move", NodeID: "n1", RelPath: "archive/a.txt", ContentHash: hashOf(body), Size: int64(len(body))},
+		},
+		bodies: map[string][][]byte{"n1": {body}},
+	}, calls: &calls}
+	e, root := newEngine(t, src)
+	if err := e.PullOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "docs")); !os.IsNotExist(err) {
+		t.Fatalf("old dir must be gone after rename, stat err=%v", err)
+	}
+	if fi, err := os.Stat(filepath.Join(root, "archive")); err != nil || !fi.IsDir() {
+		t.Fatalf("new dir must exist: %v", err)
+	}
+	if got, _ := os.ReadFile(filepath.Join(root, "archive", "a.txt")); string(got) != "content" {
+		t.Fatalf("file must be inside the new dir, got %q", got)
+	}
+	if calls != 1 {
+		t.Fatalf("Download called %d times, expected 1 (rename must not re-download)", calls)
+	}
+}
+
+func TestApplyDirRenameLeavesNoGhostForDetect(t *testing.T) {
+	body := []byte("g")
+	src := &fakeSource{
+		changes: []Change{
+			{Seq: 1, Op: "create", NodeID: "d1", RelPath: "docs", IsDir: true},
+			{Seq: 2, Op: "create", NodeID: "n1", RelPath: "docs/a.txt", ContentHash: hashOf(body), Size: 1},
+			{Seq: 3, Op: "move", NodeID: "d1", RelPath: "archive", IsDir: true},
+			{Seq: 4, Op: "move", NodeID: "n1", RelPath: "archive/a.txt", ContentHash: hashOf(body), Size: 1},
+		},
+		bodies: map[string][][]byte{"n1": {body}},
+	}
+	e, _ := newEngine(t, src)
+	if err := e.PullOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	// Regression: the old dir used to survive on disk, so DetectLocal reported it as
+	// a local create and PushLocal resurrected an empty ghost folder on the server.
+	got, err := e.DetectLocal()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("DetectLocal after dir rename must be empty, got %+v", got)
+	}
+}
+
+func TestApplyChildEventsAfterDirRenameAreNoOps(t *testing.T) {
+	body := []byte("child")
+	calls := 0
+	src := &countingSource{fakeSource: fakeSource{
+		changes: []Change{
+			{Seq: 1, Op: "create", NodeID: "d1", RelPath: "docs", IsDir: true},
+			{Seq: 2, Op: "create", NodeID: "n1", RelPath: "docs/a.txt", ContentHash: hashOf(body), Size: int64(len(body))},
+			{Seq: 3, Op: "move", NodeID: "d1", RelPath: "archive", IsDir: true},
+		},
+		bodies: map[string][][]byte{"n1": {body}},
+	}, calls: &calls}
+	e, root := newEngine(t, src)
+	if err := e.PullOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	// The child's own move event arrives after the dir was already renamed on disk:
+	// the file is at the new path with the same hash — must be an index-only update.
+	src.changes = append(src.changes,
+		Change{Seq: 4, Op: "move", NodeID: "n1", RelPath: "archive/a.txt", ContentHash: hashOf(body), Size: int64(len(body))})
+	if err := e.PullOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Fatalf("Download called %d times, expected 1 (child already in place)", calls)
+	}
+	if got, _ := os.ReadFile(filepath.Join(root, "archive", "a.txt")); string(got) != "child" {
+		t.Fatalf("child file: %q", got)
+	}
+	if n, ok, _ := e.idx.Get("n1"); !ok || n.RelPath != "archive/a.txt" {
+		t.Fatalf("index must track the new child path, got %+v ok=%v", n, ok)
+	}
+}
+
 func TestApplyDelete(t *testing.T) {
 	body := []byte("x")
 	src := &fakeSource{

@@ -150,6 +150,26 @@ func (e *Engine) apply(ctx context.Context, c Change) error {
 	}
 
 	if c.IsDir {
+		// A known dir arriving under a new rel_path is a server-side move/rename.
+		// Rename the whole subtree on disk in one shot — descendants' own feed
+		// entries then find their files already in place and become index-only
+		// no-ops. Without this the old dir survived empty, DetectLocal reported it
+		// as a local create, and PushLocal resurrected a ghost folder on the server.
+		if existing, ok, gerr := e.idx.Get(c.NodeID); gerr != nil {
+			return gerr
+		} else if ok && existing.RelPath != c.RelPath {
+			if oldAbs, aerr := e.abs(existing.RelPath); aerr == nil {
+				if fi, serr := os.Stat(oldAbs); serr == nil && fi.IsDir() {
+					if err := os.MkdirAll(filepath.Dir(abs), 0o755); err != nil {
+						return err
+					}
+					// Rename may fail legitimately (e.g. target already exists after
+					// a partial manual move) — fall through to MkdirAll; descendants
+					// will be applied by their own feed entries.
+					_ = os.Rename(oldAbs, abs)
+				}
+			}
+		}
 		if err := os.MkdirAll(abs, 0o755); err != nil {
 			return err
 		}
