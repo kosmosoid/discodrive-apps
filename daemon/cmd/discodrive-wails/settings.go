@@ -107,19 +107,27 @@ func (a *App) RevealCache() {
 	openLocal(p)
 }
 
-// Unpair closes any open vaults, removes the saved config, and drops the session so the
-// UI returns to the pairing screen (used to change server).
+// Unpair closes any open vaults, removes the saved config, and wipes the profile's
+// server-derived state (index + content cache) so the UI returns to the pairing
+// screen with nothing left of the old server. Without the wipe, pairing to a
+// different server merged the stale index into the new tree and re-uploaded
+// leftover data (e.g. vaults) to the wrong server.
 func (a *App) Unpair() error {
 	if a.ready {
+		// While the config still points at the old server: re-encrypt and push any
+		// open vaults back where they belong.
 		_ = a.ctrl.CloseAllVaults(a.ctx)
 	}
 	profile, err := desktop.ProfileDir()
 	if err != nil {
 		return err
 	}
+	if a.idx != nil {
+		_ = a.idx.Close() // release index.db so it can be deleted (Windows)
+	}
+	a.ctrl, a.idx, a.up, a.ready = nil, nil, nil, false
 	if err := os.Remove(desktop.DesktopConfigPath(profile)); err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	a.ctrl, a.idx, a.up, a.ready = nil, nil, nil, false
-	return nil
+	return desktop.WipeState(profile)
 }

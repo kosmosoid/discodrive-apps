@@ -104,6 +104,26 @@ func (i *Index) SetScopeEpoch(epoch int64) error {
 	return err
 }
 
+// ServerURL returns the server this index was built against ("" if never set).
+// Used to detect re-pairing to a different server, where the whole index is stale.
+func (i *Index) ServerURL() (string, error) {
+	var v string
+	err := i.db.QueryRow("SELECT value FROM meta WHERE key = 'server_url'").Scan(&v)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return v, nil
+}
+
+func (i *Index) SetServerURL(u string) error {
+	_, err := i.db.Exec(
+		"INSERT INTO meta(key, value) VALUES('server_url', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", u)
+	return err
+}
+
 // Clear drops all known nodes and resets the cursor to 0, so the next pull rebuilds the
 // tree from scratch. Used when the sync scope changes. The scope_epoch is left untouched
 // (the caller sets it after a successful reconcile).

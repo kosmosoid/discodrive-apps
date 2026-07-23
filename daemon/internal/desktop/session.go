@@ -22,10 +22,29 @@ func SaveConfig(profileDir string, cfg config.Config) error {
 	return cfg.Save(DesktopConfigPath(profileDir))
 }
 
+// WipeState removes the profile's server-derived state: the index database (with
+// its SQLite sidecar files) and the content cache. The pairing config and the
+// user's preferences (settings.json) are left untouched. Used on unpair and when
+// the profile turns out to belong to a different server.
+func WipeState(profileDir string) error {
+	dbPath := IndexDBPath(profileDir)
+	for _, p := range []string{dbPath, dbPath + "-wal", dbPath + "-shm", dbPath + "-journal"} {
+		if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+	return os.RemoveAll(ContentDir(profileDir))
+}
+
 // Open loads the profile's config and index and builds a controller backed by an
 // unscoped server client (the browser navigates the whole vault). The returned
 // index is handed back so the caller controls its lifetime. A missing/invalid
 // config returns an error, signalling the UI to show pairing.
+//
+// An index built against a different server than the config now points at is
+// wiped before use: its node ids, cursor, and cached content all live in the old
+// server's namespace, and reusing them merges the old tree into the new one and
+// re-uploads stale data (e.g. leftover vaults) to the wrong server.
 func Open(profileDir string) (*Controller, *index.Index, error) {
 	cfg, err := config.Load(DesktopConfigPath(profileDir))
 	if err != nil {
@@ -33,6 +52,24 @@ func Open(profileDir string) (*Controller, *index.Index, error) {
 	}
 	idx, err := index.Open(IndexDBPath(profileDir))
 	if err != nil {
+		return nil, nil, err
+	}
+	stored, err := idx.ServerURL()
+	if err != nil {
+		idx.Close()
+		return nil, nil, err
+	}
+	if stored != "" && stored != cfg.ServerURL {
+		idx.Close()
+		if err := WipeState(profileDir); err != nil {
+			return nil, nil, err
+		}
+		if idx, err = index.Open(IndexDBPath(profileDir)); err != nil {
+			return nil, nil, err
+		}
+	}
+	if err := idx.SetServerURL(cfg.ServerURL); err != nil {
+		idx.Close()
 		return nil, nil, err
 	}
 	srv := protocol.NewUnscoped(cfg.ServerURL, cfg.DeviceToken)

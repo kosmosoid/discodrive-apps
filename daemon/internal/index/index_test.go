@@ -65,3 +65,28 @@ func TestIndexCursorPersistsAcrossReopen(t *testing.T) {
 		t.Fatalf("cursor after reopen: %d", c)
 	}
 }
+
+func TestIndexServerURLMeta(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "state.db")
+	idx, err := Open(p)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer idx.Close()
+
+	if u, err := idx.ServerURL(); err != nil || u != "" {
+		t.Fatalf("default server url: %q err=%v", u, err)
+	}
+	if err := idx.SetServerURL("https://a.test"); err != nil {
+		t.Fatal(err)
+	}
+	if u, _ := idx.ServerURL(); u != "https://a.test" {
+		t.Fatalf("after set: %q", u)
+	}
+	if err := idx.SetServerURL("https://b.test"); err != nil {
+		t.Fatal(err)
+	}
+	if u, _ := idx.ServerURL(); u != "https://b.test" {
+		t.Fatalf("after overwrite: %q", u)
+	}
+}
