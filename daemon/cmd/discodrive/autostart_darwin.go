@@ -30,8 +30,14 @@ var plistTmpl = template.Must(template.New("plist").Parse(`<?xml version="1.0" e
     </array>
     <key>RunAtLoad</key>
     <true/>
+    <!-- Restart only after a crash (non-zero exit). A plain KeepAlive=true also
+         resurrects the app after the user quits it from the tray menu, respawning
+         the icon every few seconds. -->
     <key>KeepAlive</key>
-    <true/>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
     <key>StandardOutPath</key>
     <string>{{.LogPath}}</string>
     <key>StandardErrorPath</key>
@@ -61,6 +67,9 @@ func installAutostart(binPath, cfgPath, logPath string) error {
 	}
 	f.Close()
 
+	// Unload a previously loaded agent first so reinstall picks up the new plist
+	// (load on an already-loaded label is an error); ignore "not loaded" errors.
+	_ = exec.Command("launchctl", "unload", dest).Run()
 	if out, err := exec.Command("launchctl", "load", dest).CombinedOutput(); err != nil {
 		return fmt.Errorf("launchctl load: %w\n%s", err, out)
 	}

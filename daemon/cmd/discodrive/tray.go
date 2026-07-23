@@ -28,7 +28,14 @@ var trayIcon []byte
 func cmdTray(args []string) {
 	fs := flag.NewFlagSet("tray", flag.ExitOnError)
 	cfgPath := fs.String("config", mustDefaultCfgPath(), i18n.T("flag_config"))
+	detach := fs.Bool("detach", false, i18n.T("flag_detach"))
+	foreground := fs.Bool("foreground", false, i18n.T("flag_foreground"))
 	_ = fs.Parse(args)
+	release, proceed := maybeDaemonize("tray", *cfgPath, *detach, *foreground)
+	if !proceed {
+		return
+	}
+	defer release()
 
 	s, cleanup, cfg, err := buildSyncer(*cfgPath)
 	if err != nil {

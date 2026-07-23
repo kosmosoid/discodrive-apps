@@ -88,6 +88,15 @@ var catalog = map[string]map[string]string{
 		"sr": "покренути у позадини, одвојити од конзоле (лог се пише у фајл)",
 		"de": "im Hintergrund ausführen, von der Konsole lösen (Log wird in Datei geschrieben)",
 	},
+	"flag_foreground": {
+		"en": "stay in the foreground (default when not started from a console)",
+		"ru": "остаться на переднем плане (по умолчанию при запуске не из консоли)",
+		"uk": "залишитися на передньому плані (типово при запуску не з консолі)",
+		"fr": "rester au premier plan (par défaut hors lancement depuis une console)",
+		"es": "permanecer en primer plano (por defecto si no se inicia desde una consola)",
+		"sr": "остати у првом плану (подразумевано када се не покреће из конзоле)",
+		"de": "im Vordergrund bleiben (Standard, wenn nicht von einer Konsole gestartet)",
+	},
 
 	// ── pair command ──────────────────────────────────────────────────────────
 
@@ -99,6 +108,42 @@ var catalog = map[string]map[string]string{
 		"es": "especifique --server",
 		"sr": "наведите --server",
 		"de": "geben Sie --server an",
+	},
+	"already_running": {
+		"en": "discodrive is already running for this profile — nothing to do",
+		"ru": "discodrive уже запущен для этого профиля — выходим",
+		"uk": "discodrive вже запущено для цього профілю — виходимо",
+		"fr": "discodrive est déjà en cours d'exécution pour ce profil — rien à faire",
+		"es": "discodrive ya está en ejecución para este perfil — nada que hacer",
+		"sr": "discodrive је већ покренут за овај профил — нема шта да се ради",
+		"de": "discodrive läuft für dieses Profil bereits — nichts zu tun",
+	},
+	"lock_error": {
+		"en": "acquiring instance lock: %v",
+		"ru": "получение блокировки экземпляра: %v",
+		"uk": "отримання блокування екземпляра: %v",
+		"fr": "acquisition du verrou d'instance : %v",
+		"es": "adquisición del bloqueo de instancia: %v",
+		"sr": "преузимање закључавања инстанце: %v",
+		"de": "Instanzsperre anfordern: %v",
+	},
+	"pair_server_changed": {
+		"en": "server changed: local sync state was reset; syncing into %s (the old folder is left untouched)\n",
+		"ru": "сервер изменился: локальное состояние синхронизации сброшено; синхронизация в %s (старая папка не тронута)\n",
+		"uk": "сервер змінився: локальний стан синхронізації скинуто; синхронізація в %s (стара папка не зачеплена)\n",
+		"fr": "serveur modifié : l'état de synchronisation local a été réinitialisé ; synchronisation dans %s (l'ancien dossier reste intact)\n",
+		"es": "servidor cambiado: el estado de sincronización local se restableció; sincronizando en %s (la carpeta antigua queda intacta)\n",
+		"sr": "сервер је промењен: локално стање синхронизације је ресетовано; синхронизација у %s (стара фасцикла остаје нетакнута)\n",
+		"de": "Server geändert: lokaler Sync-Zustand wurde zurückgesetzt; Synchronisation in %s (der alte Ordner bleibt unberührt)\n",
+	},
+	"pair_reset_error": {
+		"en": "resetting local sync state: %v",
+		"ru": "сброс локального состояния синхронизации: %v",
+		"uk": "скидання локального стану синхронізації: %v",
+		"fr": "réinitialisation de l'état de synchronisation local : %v",
+		"es": "restablecimiento del estado de sincronización local: %v",
+		"sr": "ресетовање локалног стања синхронизације: %v",
+		"de": "Zurücksetzen des lokalen Sync-Zustands: %v",
 	},
 	"pair_init_error": {
 		"en": "pairing init: %v",

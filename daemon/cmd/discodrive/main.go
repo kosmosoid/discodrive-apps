@@ -56,6 +56,20 @@ func cmdPair(args []string) {
 	if *server == "" {
 		fatal(i18n.T("pair_need_server"))
 	}
+	dirExplicit := false
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == "dir" {
+			dirExplicit = true
+		}
+	})
+	oldServer := ""
+	if oldCfg, err := config.Load(*cfgPath); err == nil {
+		oldServer = oldCfg.ServerURL
+	}
+	// Re-pairing to a different server: forget the old index and (unless --dir was
+	// given) sync into a fresh per-server folder, so nothing from the old server
+	// leaks into — or gets uploaded to — the new one.
+	syncDir := resolvePairDir(*dir, dirExplicit, oldServer, *server, defaultSyncDir())
 	ctx := context.Background()
 	p, err := protocol.PairInit(ctx, *server, *name, "desktop")
 	if err != nil {
@@ -72,22 +86,30 @@ func cmdPair(args []string) {
 	if err != nil {
 		fatal(fmt.Sprintf(i18n.T("pair_wait_error"), err))
 	}
-	cfg := config.Config{ServerURL: *server, DeviceToken: token, SyncDir: *dir}
+	if oldServer != "" && oldServer != *server {
+		if err := removeStateDB(*cfgPath); err != nil {
+			fatal(fmt.Sprintf(i18n.T("pair_reset_error"), err))
+		}
+		fmt.Printf(i18n.T("pair_server_changed"), syncDir)
+	}
+	cfg := config.Config{ServerURL: *server, DeviceToken: token, SyncDir: syncDir}
 	if err := cfg.Save(*cfgPath); err != nil {
 		fatal(fmt.Sprintf(i18n.T("pair_save_error"), err))
 	}
-	fmt.Printf(i18n.T("pair_done"), *cfgPath, *dir)
+	fmt.Printf(i18n.T("pair_done"), *cfgPath, syncDir)
 }
 
 func cmdRun(args []string) {
 	fs := flag.NewFlagSet("run", flag.ExitOnError)
 	cfgPath := fs.String("config", mustDefaultCfgPath(), i18n.T("flag_config"))
 	detach := fs.Bool("detach", false, i18n.T("flag_detach"))
+	foreground := fs.Bool("foreground", false, i18n.T("flag_foreground"))
 	_ = fs.Parse(args)
-	if *detach {
-		detachAndExit(*cfgPath)
+	release, proceed := maybeDaemonize("run", *cfgPath, *detach, *foreground)
+	if !proceed {
 		return
 	}
+	defer release()
 	s, cleanup, cfg, err := buildSyncer(*cfgPath)
 	if err != nil {
 		fatal(fmt.Sprintf(i18n.T("run_init_error"), err))
@@ -120,6 +142,22 @@ func buildSyncer(cfgPath string) (*syncer.Syncer, func(), config.Config, error) 
 	}
 	idx, err := index.Open(config.StateDBPath(cfgPath))
 	if err != nil {
+		return nil, nil, cfg, fmt.Errorf(i18n.T("build_open_index"), err)
+	}
+	// An index built against a different server is stale in every way (node ids,
+	// cursor, hashes live in the old server's namespace) — wipe it rather than
+	// merging two servers' trees. Local files in SyncDir are not touched.
+	if stored, serr := idx.ServerURL(); serr == nil && stored != "" && stored != cfg.ServerURL {
+		idx.Close()
+		if err := removeStateDB(cfgPath); err != nil {
+			return nil, nil, cfg, fmt.Errorf(i18n.T("build_open_index"), err)
+		}
+		if idx, err = index.Open(config.StateDBPath(cfgPath)); err != nil {
+			return nil, nil, cfg, fmt.Errorf(i18n.T("build_open_index"), err)
+		}
+	}
+	if err := idx.SetServerURL(cfg.ServerURL); err != nil {
+		idx.Close()
 		return nil, nil, cfg, fmt.Errorf(i18n.T("build_open_index"), err)
 	}
 	eng := engine.New(client, idx, cfg.SyncDir)
