@@ -59,7 +59,17 @@ func Open(profileDir string) (*Controller, *index.Index, error) {
 		idx.Close()
 		return nil, nil, err
 	}
-	if stored != "" && stored != cfg.ServerURL {
+	suspect := stored != "" && stored != cfg.ServerURL
+	if stored == "" {
+		// A pre-stamp index (created by an old client version) may have been built
+		// against any server — including a poisoned merge of two servers from the
+		// pre-wipe unpair flow — so a non-empty one cannot be trusted either. The
+		// one-time cache loss for legacy profiles is the price of correctness.
+		if nodes, nerr := idx.All(); nerr == nil && len(nodes) > 0 {
+			suspect = true
+		}
+	}
+	if suspect {
 		idx.Close()
 		if err := WipeState(profileDir); err != nil {
 			return nil, nil, err

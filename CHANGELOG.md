@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Desktop app: profiles created by pre-0.0.3 versions (no server stamp in the index)
+  are now reset on first open — such an index may hold a poisoned merge of two
+  servers' trees and previously kept showing ghost folders after re-pairing.
+
 ## 0.0.3
 
 ### Fixed

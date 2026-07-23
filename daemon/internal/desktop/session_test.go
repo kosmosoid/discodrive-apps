@@ -95,6 +95,31 @@ func TestOpenWipesStateOnServerChange(t *testing.T) {
 	}
 }
 
+func TestOpenWipesLegacyUnstampedIndex(t *testing.T) {
+	profile := t.TempDir()
+	_ = SaveConfig(profile, config.Config{ServerURL: "https://new.test", DeviceToken: "kfd_x"})
+	// A pre-stamp index (created by an old client version) may contain nodes from
+	// ANY server — including a poisoned merge of two servers — so it can't be trusted.
+	idx, err := index.Open(IndexDBPath(profile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = idx.Put(index.Node{NodeID: "legacy", RelPath: "junk", IsDir: true, Version: 1})
+	idx.Close()
+
+	_, idx2, err := Open(profile)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer idx2.Close()
+	if _, ok, _ := idx2.Get("legacy"); ok {
+		t.Fatal("unstamped non-empty index must be wiped on open")
+	}
+	if u, _ := idx2.ServerURL(); u != "https://new.test" {
+		t.Fatalf("index must be stamped after the wipe, got %q", u)
+	}
+}
+
 func TestWipeState(t *testing.T) {
 	profile := t.TempDir()
 	_ = SaveConfig(profile, config.Config{ServerURL: "https://a.test", DeviceToken: "kfd_x"})
